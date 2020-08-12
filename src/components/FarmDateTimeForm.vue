@@ -10,7 +10,7 @@
         required
         class="form-control">
     </div>
-    <div id="-form" class="form-item form-group col">
+    <div id="hour-form" class="form-item form-group col">
       <label for="hour" class="control-label">{{ $t('Hour')}}</label>
       <input
         id="hour"
