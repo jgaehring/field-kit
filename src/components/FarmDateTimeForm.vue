@@ -1,7 +1,7 @@
 <template>
   <div class="farm-date-time-form form-row">
     <div id="date-form" class="form-item form-group col">
-      <label for="date" class="control-label">Date</label>
+      <label for="date" class="control-label">{{ $t('Date')}}</label>
       <input
         id="date"
         type="date"
@@ -10,8 +10,8 @@
         required
         class="form-control">
     </div>
-    <div id="hour-form" class="form-item form-group col">
-      <label for="hour" class="control-label">Hour</label>
+    <div id="-form" class="form-item form-group col">
+      <label for="hour" class="control-label">{{ $t('Hour')}}</label>
       <input
         id="hour"
         type="number"
@@ -23,7 +23,7 @@
         class="form-control">
     </div>
     <div id="minute-form" class="form-item form-group col">
-      <label for="minute" class="control-label">Min</label>
+      <label for="minute" class="control-label">{{ $t('Min')}}</label>
       <input
         id="minute"
         type="number"
@@ -46,7 +46,7 @@
             :checked="time.am"
             @input="updateAmPm($event.target.checked)"
             class="form-check-input">
-          <label for="is-am" class="form-check-label">AM</label>
+          <label for="is-am" class="form-check-label">{{ $t('AM')}}</label>
         </div>
         <div class="form-check">
           <input
@@ -57,7 +57,7 @@
             :checked="!time.am"
             @input="updateAmPm(!$event.target.checked)"
             class="form-check-input">
-          <label for="is-pm" class="form-check-label">PM</label>
+          <label for="is-pm" class="form-check-label">{{ $t('PM')}}</label>
         </div>
       </div>
     </div>
