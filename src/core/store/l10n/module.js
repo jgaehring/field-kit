@@ -6,6 +6,10 @@ const enabledLocales = [
     code: 'pt',
     aliases: ['pt-br', 'pt-pt'],
   },
+  {
+    code: 'de',
+    aliases: ['de-de', 'de-at'],
+  },
 ];
 
 const getCode = locale => enabledLocales.find(l => (
