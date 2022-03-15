@@ -10,6 +10,7 @@ import { STATUS_IN_PROGRESS, updateStatus } from './connection';
 import { alert } from '../warnings/alert';
 import { asFlatArray } from '../utils/asArray';
 import parseFilter from '../utils/parseFilter';
+import safeCall from '../utils/safeCall';
 
 // An array of shortNames to ensure only valid entities are pushed onto the scheduler.
 const entities = Object.keys(nomenclature.entities);
@@ -61,15 +62,6 @@ function groupFilters(pendingIdStrings, pendingFilters) {
   });
   return groups;
 }
-
-// Utility for safely calling listeners and callbacks w/o worrying about exceptions.
-const safeCall = (callback, ...args) => {
-  try {
-    callback(...args);
-  } catch (error) {
-    console.error(error); // eslint-disable-line no-console
-  }
-};
 
 // By default, the interval doubles after each attempt (geometric backoff),
 // until the seventh attempt, at which the interval becomes and remains 5 min.

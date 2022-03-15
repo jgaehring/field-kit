@@ -20,11 +20,16 @@ import diff from '../utils/diff';
 import parseFilter from '../utils/parseFilter';
 import { PromiseQueue } from '../utils/promises';
 import flattenEntity from '../utils/flattenEntity';
+import safeCall from '../utils/safeCall';
 import { alert } from '../warnings/alert';
 import nomenclature from './nomenclature';
 import {
   backupTransactions, clearBackup, restoreTransactions,
 } from './backup';
+
+// Constants for event names recognized by `on()`.
+const EVENT_LOAD = 'load';
+const EVENT_SYNC = 'sync';
 
 const scheduler = new SyncScheduler();
 
@@ -72,7 +77,7 @@ const replay = (previous, transactions) => {
 
 const syncHandler = revision => interceptor((evaluation) => {
   const {
-    entity, type, id, state,
+    entity, type, id, state, listeners,
   } = revision;
   const {
     loginRequired, connectivity, repeatable, warnings, data: [value] = [],
@@ -92,6 +97,7 @@ const syncHandler = revision => interceptor((evaluation) => {
   }
   if (value) {
     emit(state, value);
+    listeners.sync.forEach((fn) => { safeCall(fn, value); });
     cacheEntity(entity, value).catch(alert);
   }
 });
@@ -179,8 +185,9 @@ export default function useEntities(options = {}) {
     queue.push(() => init);
     const route = identifyRoute();
     const [backupURI, transactions] = restoreTransactions(entity, type, _id, route);
+    const listeners = { load: new Set(), sync: new Set() };
     const revision = {
-      entity, type, id: _id, state, transactions, queue, backupURI,
+      entity, type, id: _id, state, transactions, queue, backupURI, listeners,
     };
     revisions.set(reference, revision);
     return [reference, revision];
@@ -241,7 +248,10 @@ export default function useEntities(options = {}) {
   function checkoutCollection(entity, filter) {
     const state = shallowReactive([]);
     const reference = readonly(state);
-    const collection = { entity, filter, state };
+    const listeners = { load: new Set(), sync: new Set() };
+    const collection = {
+      entity, filter, state, listeners,
+    };
     collections.set(reference, collection);
     const query = parseFilter(filter);
     updateStatus(STATUS_IN_PROGRESS);
@@ -251,7 +261,8 @@ export default function useEntities(options = {}) {
       const syncOptions = { cache, filter };
       return syncEntities(shortName, syncOptions);
     }).then(collectionSyncHandler(entity, filter, emitCollection(reference)))
-      .then(() => {
+      .then((results) => {
+        listeners.sync.forEach((fn) => { fn(results.data); });
         state.forEach((itemRef) => {
           const { state: itemState, transactions } = revisions.get(itemRef);
           const fields = replay(itemState, transactions);
@@ -277,22 +288,43 @@ export default function useEntities(options = {}) {
     const [reference, revision] = createEntity(_entity, type, id);
     // Early return if this is a brand new entity.
     if (!validate(id)) return reference;
-    const { queue, state, transactions } = revision;
+    const {
+      queue, state, transactions, listeners,
+    } = revision;
     queue.push(() => {
       updateStatus(STATUS_IN_PROGRESS);
       return getRecords('entities', _entity, id).then((data) => {
-        if (data) emit(state, data);
+        if (data) {
+          emit(state, data);
+          listeners.load.forEach((fn) => { safeCall(fn, data); });
+        }
         const syncOptions = { cache: asArray(data), filter: { id, type } };
         return syncEntities(shortName, syncOptions)
           .then(syncHandler(revision))
           .then(({ data: [value] = [] } = {}) => {
             const fields = replay(value, transactions);
             emit(state, fields);
+            if (value) listeners.sync.forEach((fn) => { fn(value); });
             return value;
           });
       });
     });
     return reference;
+  }
+
+  function on(reference, event, handler) {
+    if ([EVENT_LOAD, EVENT_SYNC].includes(event)) {
+      let listeners = {};
+      if (revisions.has(reference)) ({ listeners } = revisions.get(reference));
+      if (collections.has(reference)) ({ listeners } = collections.get(reference));
+      listeners[event]?.add(handler);
+      return () => listeners[event]?.delete(handler);
+    }
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.warn('Invalid entity event: ', event);
+    }
+    return () => false;
   }
 
   // A synchronous operation that updates the reference but does not persist
@@ -429,7 +461,7 @@ export default function useEntities(options = {}) {
     const transactions = [...revision.transactions];
     revision.transactions = [];
     const {
-      entity, type, id, queue, state, backupURI, dependencies,
+      entity, type, id, queue, state, backupURI, dependencies, listeners,
     } = revision;
     const { shortName } = nomenclature.entities[entity];
     return queue.push((previous) => {
@@ -487,11 +519,14 @@ export default function useEntities(options = {}) {
           return syncEntities(shortName, syncOptions);
         })
         .then(syncHandler(revision))
-        .then(({ data: [value] = [] } = {}) => value);
+        .then(({ data: [value] = [] } = {}) => {
+          if (value) listeners.sync.forEach((fn) => { fn(value); });
+          return value;
+        });
     });
   }
 
   return {
-    add, append, checkout, commit, drop, link, revise, unlink,
+    add, append, checkout, commit, drop, link, on, revise, unlink,
   };
 }
