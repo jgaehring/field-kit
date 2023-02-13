@@ -57,6 +57,8 @@ function parseFilter(filter = {}) {
   if (Array.isArray(filter)) {
     return operators.$or(filter);
   }
+  // TODO: Would this introduce any regressions where filter === null?
+  // if (!is(Object, filter)) return equals(filter);
   if (typeof filter !== 'object') return equals(filter);
   const entries = Object.entries(filter);
   if (entries.length === 0) return T;
