@@ -392,6 +392,7 @@ export default function useEntities(options = {}) {
     };
     // To make sure the linkedRef gets updates whenever there are changes to the
     // corresponding resource identifiers in the origRef, a watcher must be set.
+    // TODO: Can watcherIsSet be replaced with a call to linkWatchers.has(linkedRef)?
     let watcherIsSet = false;
     const setLinkWatcher = () => {
       const origRef = revisions.has(referent) ? referent : unref(referent);

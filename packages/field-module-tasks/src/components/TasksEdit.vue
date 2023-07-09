@@ -340,6 +340,7 @@ export default {
       save,
       units,
       quantities,
+      // TODO: replace `partitionOptions` with `link`?
       assets: computed(() => partitionOptions(assets.value, current.asset)),
       equipment: computed(() => partitionOptions(equipment.value, current.equipment)),
       locations: computed(() => partitionOptions(locations.value, current.location)),
