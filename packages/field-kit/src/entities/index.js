@@ -131,6 +131,7 @@ const collectionSyncHandler = (entity, filter, emitter) =>
       // TODO: Rename vars (here and elsewhere) b/c splitFilterByType replaced parseBundles.
       const repeatableFilters = splitFilterByType(filter, repeatableTypes);
       repeatableFilters.forEach(({ type, filter: typeFilter }) => {
+        // TODO: Push files here too? Maybe not if its only called on checkout
         const subscribe = scheduler.push(entity, type, typeFilter);
         subscribe((results) => {
           results.data.forEach((value) => {
@@ -182,6 +183,7 @@ export default function useEntities(options = {}) {
     const queue = new PromiseQueue();
     queue.push(() => init);
     const route = identifyRoute();
+    // TODO: restore backup files too?
     const [backupURI, transactions] = restoreTransactions(entity, type, _id, route);
     const revision = {
       entity, type, id: _id, state, transactions, queue, backupURI, files: {},
@@ -537,6 +539,7 @@ export default function useEntities(options = {}) {
           };
           const fileCachingRequests = Object.entries(revision.files || {})
             .flatMap(([field, files]) => files.map(cacheByField(field)));
+          // TODO: how to handle failed attempts to cache files?
           return Promise.allSettled(fileCachingRequests);
         })
         .then(() => {
