@@ -128,9 +128,10 @@ const collectionSyncHandler = (entity, filter, emitter) =>
     }
     const repeatableTypes = findRepeatableTypes(entity, repeatable);
     if (repeatableTypes.length > 0) {
+      // TODO: Rename vars (here and elsewhere) b/c splitFilterByType replaced parseBundles.
       const repeatableFilters = splitFilterByType(filter, repeatableTypes);
-      repeatableFilters.forEach(({ name: bundle, filter: bundleFilter }) => {
-        const subscribe = scheduler.push(entity, bundle, bundleFilter);
+      repeatableFilters.forEach(({ type, filter: typeFilter }) => {
+        const subscribe = scheduler.push(entity, type, typeFilter);
         subscribe((results) => {
           results.data.forEach((value) => {
             emitter(value);
