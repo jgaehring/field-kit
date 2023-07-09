@@ -17,6 +17,8 @@ import { loadFilesByHostId } from '../idb/files';
 // An array of shortNames to ensure only valid entities are pushed onto the scheduler.
 const entities = Object.keys(nomenclature.entities);
 
+// TODO: Change type to bundle here to reflect use of the full `entity--type`
+// format? Or just omit the entity?
 const stringifyID = (entity, type, id) => JSON.stringify({ entity, type, id });
 const parseID = string => JSON.parse(string);
 const FILTER_ID = 'FILTER_ID';
